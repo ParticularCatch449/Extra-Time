@@ -1,0 +1,473 @@
+:root {
+	--bg: #0a120c;
+	--bg-elevated: #111f16;
+	--bg-card: #152419;
+	--border: #243d2c;
+	--text: #e8f0ea;
+	--text-muted: #8fa896;
+	--accent: #3ddc84;
+	--accent-dim: #2a9d5c;
+	--accent-glow: rgba(61, 220, 132, 0.15);
+	--danger: #ff6b6b;
+	--radius: 12px;
+	--radius-sm: 8px;
+	--shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+	--font: 'Inter', system-ui, -apple-system, sans-serif;
+	--max-width: 1200px;
+	--header-h: 64px;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	min-height: 100vh;
+	font-family: var(--font);
+	background: var(--bg);
+	color: var(--text);
+	line-height: 1.5;
+	background-image:
+		radial-gradient(ellipse 80% 50% at 50% -20%, rgba(61, 220, 132, 0.08), transparent),
+		linear-gradient(180deg, var(--bg) 0%, #060a07 100%);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+img {
+	max-width: 100%;
+	display: block;
+}
+
+.hidden {
+	display: none !important;
+}
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	height: var(--header-h);
+	background: rgba(10, 18, 12, 0.85);
+	backdrop-filter: blur(12px);
+	border-bottom: 1px solid var(--border);
+}
+
+.header-inner {
+	max-width: var(--max-width);
+	margin: 0 auto;
+	padding: 0 1.25rem;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.brand {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	font-weight: 700;
+	font-size: 1.15rem;
+}
+
+.brand-icon {
+	font-size: 1.4rem;
+}
+
+.nav-link {
+	color: var(--text-muted);
+	font-size: 0.9rem;
+	font-weight: 500;
+	transition: color 0.15s;
+}
+
+.nav-link:hover {
+	color: var(--accent);
+}
+
+main {
+	max-width: var(--max-width);
+	margin: 0 auto;
+	padding: 1.5rem 1.25rem 3rem;
+}
+
+.loading-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	min-height: 50vh;
+	color: var(--text-muted);
+}
+
+.spinner {
+	width: 40px;
+	height: 40px;
+	border: 3px solid var(--border);
+	border-top-color: var(--accent);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+.hero {
+	margin-bottom: 2rem;
+}
+
+.hero h1 {
+	margin: 0 0 0.5rem;
+	font-size: clamp(1.75rem, 5vw, 2.5rem);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.hero p {
+	margin: 0;
+	color: var(--text-muted);
+	font-size: 1.05rem;
+	max-width: 36rem;
+}
+
+.stremio-install {
+	margin-bottom: 2.5rem;
+}
+
+.stremio-card {
+	background: linear-gradient(135deg, var(--bg-card) 0%, #1a3024 100%);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 1.5rem;
+	box-shadow: var(--shadow);
+}
+
+.stremio-install--compact .stremio-card {
+	padding: 1.25rem;
+}
+
+.stremio-info h2 {
+	margin: 0 0 0.35rem;
+	font-size: 1.25rem;
+}
+
+.stremio-info p {
+	margin: 0 0 1rem;
+	color: var(--text-muted);
+	font-size: 0.95rem;
+}
+
+.stremio-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.65rem 1.25rem;
+	border-radius: var(--radius-sm);
+	font-family: inherit;
+	font-size: 0.9rem;
+	font-weight: 600;
+	cursor: pointer;
+	border: none;
+	transition: transform 0.1s, background 0.15s, box-shadow 0.15s;
+}
+
+.btn:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: var(--accent);
+	color: #041208;
+	box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.btn-primary:hover {
+	background: #4ef595;
+}
+
+.btn-secondary {
+	background: transparent;
+	color: var(--text);
+	border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+	border-color: var(--accent-dim);
+	color: var(--accent);
+}
+
+.manifest-url {
+	background: var(--bg);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	padding: 0.75rem 1rem;
+	overflow-x: auto;
+}
+
+.manifest-url code {
+	font-size: 0.8rem;
+	color: var(--accent);
+	word-break: break-all;
+}
+
+.stremio-hint {
+	margin: 0.75rem 0 0;
+	font-size: 0.8rem;
+	color: var(--text-muted);
+}
+
+.catalog-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 1.25rem;
+}
+
+.filter-label {
+	font-size: 0.9rem;
+	color: var(--text-muted);
+}
+
+.genre-select {
+	flex: 1;
+	min-width: 200px;
+	max-width: 320px;
+	padding: 0.6rem 0.85rem;
+	background: var(--bg-card);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--text);
+	font-family: inherit;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
+.genre-select:focus {
+	outline: none;
+	border-color: var(--accent-dim);
+}
+
+.highlights-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 1.25rem;
+}
+
+.highlight-card {
+	background: var(--bg-card);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+	transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.highlight-card:hover {
+	transform: translateY(-3px);
+	border-color: var(--accent-dim);
+	box-shadow: var(--shadow);
+}
+
+.card-link {
+	display: block;
+}
+
+.card-thumb-wrap {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	overflow: hidden;
+	background: var(--bg-elevated);
+}
+
+.card-thumb {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.3s;
+}
+
+.highlight-card:hover .card-thumb {
+	transform: scale(1.04);
+}
+
+.card-play {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	color: white;
+	background: rgba(0, 0, 0, 0.35);
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.highlight-card:hover .card-play {
+	opacity: 1;
+}
+
+.card-body {
+	padding: 1rem;
+}
+
+.card-title {
+	margin: 0 0 0.35rem;
+	font-size: 0.95rem;
+	font-weight: 600;
+	line-height: 1.35;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.card-meta {
+	margin: 0;
+	font-size: 0.8rem;
+	color: var(--text-muted);
+}
+
+.empty-state {
+	text-align: center;
+	color: var(--text-muted);
+	padding: 2rem;
+}
+
+.watch-page {
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+.back-link {
+	display: inline-block;
+	margin-bottom: 1.25rem;
+	color: var(--text-muted);
+	font-size: 0.9rem;
+	font-weight: 500;
+	transition: color 0.15s;
+}
+
+.back-link:hover {
+	color: var(--accent);
+}
+
+.watch-header h1 {
+	margin: 0 0 0.5rem;
+	font-size: clamp(1.25rem, 4vw, 1.75rem);
+}
+
+.watch-header p {
+	margin: 0 0 1.5rem;
+	color: var(--text-muted);
+	font-size: 0.95rem;
+}
+
+.player-wrap {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	background: #000;
+	border-radius: var(--radius);
+	overflow: hidden;
+	border: 1px solid var(--border);
+	margin-bottom: 1.5rem;
+}
+
+.player-loading {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.75rem;
+	color: var(--text-muted);
+	background: var(--bg-elevated);
+}
+
+.player {
+	width: 100%;
+	height: 100%;
+	border: none;
+}
+
+.video-clips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 2rem;
+}
+
+.clip-btn {
+	padding: 0.5rem 1rem;
+	background: var(--bg-card);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	color: var(--text);
+	font-family: inherit;
+	font-size: 0.85rem;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.clip-btn:hover,
+.clip-btn.active {
+	border-color: var(--accent);
+	background: var(--accent-glow);
+	color: var(--accent);
+}
+
+.toast {
+	position: fixed;
+	bottom: 1.5rem;
+	left: 50%;
+	transform: translateX(-50%);
+	background: var(--bg-card);
+	border: 1px solid var(--accent-dim);
+	color: var(--text);
+	padding: 0.75rem 1.25rem;
+	border-radius: var(--radius-sm);
+	font-size: 0.9rem;
+	box-shadow: var(--shadow);
+	z-index: 200;
+	animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+	to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@media (max-width: 600px) {
+	.stremio-actions {
+		flex-direction: column;
+	}
+
+	.btn {
+		width: 100%;
+	}
+
+	.highlights-grid {
+		grid-template-columns: 1fr;
+	}
+}

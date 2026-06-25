@@ -1,0 +1,11 @@
+.git
+.gitignore
+node_modules
+npm-debug.log*
+.env
+.env.*
+.vercel
+.now
+README.md
+preview.png
+deploy

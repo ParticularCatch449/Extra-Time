@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extra Time — Football Highlights</title>
+  <style>
+    :root { --bg: #0d1117; --card: #161b22; --text: #e6edf3; --muted: #8b949e; --accent: #3fb950; --border: #30363d; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; }
+    h1 { margin: 0; font-size: 1.35rem; font-weight: 600; }
+    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .btn { display: inline-block; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; text-decoration: none; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; font-size: 0.9rem; }
+    .btn-primary { background: var(--accent); color: #0d1117; border-color: var(--accent); }
+    .btn:hover { filter: brightness(1.08); }
+    main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+    .filters { margin-bottom: 1.25rem; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    select { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 0.45rem 0.75rem; border-radius: 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
+    .card:hover { border-color: var(--accent); }
+    .card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; background: #000; }
+    .card-body { padding: 0.75rem 1rem 1rem; }
+    .card h2 { margin: 0 0 0.35rem; font-size: 0.95rem; font-weight: 600; }
+    .meta { font-size: 0.8rem; color: var(--muted); }
+    .player-wrap { margin-top: 1rem; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 16/9; }
+    .player-wrap iframe { width: 100%; height: 100%; border: 0; }
+    .detail { display: none; }
+    .detail.active { display: block; }
+    .list-view.hidden { display: none; }
+    .status { color: var(--muted); padding: 2rem; text-align: center; }
+    .error { color: #f85149; }
+    .video-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
+    .video-pills button { font-size: 0.8rem; }
+    .video-pills button.active { border-color: var(--accent); }
+    a.back { color: var(--accent); cursor: pointer; text-decoration: none; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Extra Time</h1>
+    <div class="actions">
+      <a id="stremio-install" class="btn btn-primary" href="#">Install in Stremio</a>
+      <a class="btn" href="/manifest.json" target="_blank" rel="noopener">Manifest</a>
+    </div>
+  </header>
+  <main>
+    <section id="list-view" class="list-view">
+      <div class="filters">
+        <label for="genre">League / region</label>
+        <select id="genre"><option value="">All</option></select>
+      </div>
+      <div id="grid" class="grid"><p class="status">Loading highlights…</p></div>
+    </section>
+    <section id="detail-view" class="detail">
+      <p><a class="back" id="back-link">← Back to highlights</a></p>
+      <h2 id="detail-title"></h2>
+      <p class="meta" id="detail-meta"></p>
+      <div class="video-pills" id="video-pills"></div>
+      <div class="player-wrap" id="player-wrap"></div>
+    </section>
+  </main>
+  <script>
+    const grid = document.getElementById('grid');
+    const genreSelect = document.getElementById('genre');
+    const listView = document.getElementById('list-view');
+    const detailView = document.getElementById('detail-view');
+
+    async function loadConfig() {
+      const res = await fetch('/api/config');
+      const cfg = await res.json();
+      document.getElementById('stremio-install').href = cfg.stremioDeepLink;
+    }
+
+    async function loadGenres() {
+      const res = await fetch('/api/genres');
+      const { genres } = await res.json();
+      genres.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = g;
+        genreSelect.appendChild(opt);
+      });
+    }
+
+    function showList() {
+      listView.classList.remove('hidden');
+      detailView.classList.remove('active');
+      history.pushState({}, '', '/');
+    }
+
+    function cardHtml(h) {
+      const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+      return `<article class="card" data-id="${esc(h.id)}">
+        <img src="${esc(h.thumbnail)}" alt="" loading="lazy" />
+        <div class="card-body">
+          <h2>${esc(h.title)}</h2>
+          <p class="meta">${esc(h.competition)} · ${new Date(h.date).toLocaleDateString()}</p>
+        </div>
+      </article>`;
+    }
+
+    async function loadHighlights(genre) {
+      grid.innerHTML = '<p class="status">Loading highlights…</p>';
+      const q = genre ? '?genre=' + encodeURIComponent(genre) : '';
+      const res = await fetch('/api/highlights' + q);
+      if (!res.ok) {
+        grid.innerHTML = '<p class="status error">Failed to load highlights.</p>';
+        return;
+      }
+      const { highlights } = await res.json();
+      if (!highlights.length) {
+        grid.innerHTML = '<p class="status">No highlights for this filter.</p>';
+        return;
+      }
+      grid.innerHTML = highlights.map(cardHtml).join('');
+      grid.querySelectorAll('.card').forEach(el => {
+        el.addEventListener('click', () => openHighlight(el.dataset.id));
+      });
+    }
+
+    let currentVideos = [];
+
+    async function playVideo(videoId) {
+      const wrap = document.getElementById('player-wrap');
+      wrap.innerHTML = '<p class="status">Resolving stream…</p>';
+      const res = await fetch('/api/stream/' + encodeURIComponent(videoId));
+      if (!res.ok) {
+        wrap.innerHTML = '<p class="status error">Could not load stream.</p>';
+        return;
+      }
+      const stream = await res.json();
+      wrap.innerHTML = `<iframe src="${stream.embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="Highlight"></iframe>`;
+    }
+
+    async function openHighlight(id) {
+      listView.classList.add('hidden');
+      detailView.classList.add('active');
+      history.pushState({}, '', '/watch/' + encodeURIComponent(id));
+      document.getElementById('detail-title').textContent = 'Loading…';
+      document.getElementById('detail-meta').textContent = '';
+      document.getElementById('video-pills').innerHTML = '';
+      document.getElementById('player-wrap').innerHTML = '';
+
+      const res = await fetch('/api/highlights/' + encodeURIComponent(id));
+      if (!res.ok) {
+        document.getElementById('detail-title').textContent = 'Not found';
+        return;
+      }
+      const h = await res.json();
+      document.getElementById('detail-title').textContent = h.title;
+      document.getElementById('detail-meta').textContent = (h.teams || []).join(' vs ') + ' · ' + h.competition;
+      currentVideos = h.videos || [];
+      const pills = document.getElementById('video-pills');
+      currentVideos.forEach((v, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn' + (i === 0 ? ' active' : '');
+        btn.textContent = v.title;
+        btn.addEventListener('click', () => {
+          pills.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          playVideo(v.id);
+        });
+        pills.appendChild(btn);
+      });
+      if (currentVideos[0]) playVideo(currentVideos[0].id);
+    }
+
+    genreSelect.addEventListener('change', () => loadHighlights(genreSelect.value));
+    document.getElementById('back-link').addEventListener('click', e => { e.preventDefault(); showList(); });
+
+    window.addEventListener('popstate', () => {
+      const m = location.pathname.match(/^\/watch\/(.+)$/);
+      if (m) openHighlight(decodeURIComponent(m[1]));
+      else showList();
+    });
+
+    (async () => {
+      await loadConfig();
+      await loadGenres();
+      const m = location.pathname.match(/^\/watch\/(.+)$/);
+      if (m) await openHighlight(decodeURIComponent(m[1]));
+      else await loadHighlights('');
+    })();
+  </script>
+</body>
+</html>

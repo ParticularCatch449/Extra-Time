@@ -1,30 +1,19 @@
 const { addonBuilder } = require('stremio-addon-sdk');
-const https = require('https');
-const axios = require('axios');
-const cheerio = require('cheerio');
-const leagues = require('./resources/leagues');
-const jimp = require('jimp');
-const { url } = require('inspector');
-const { listenerCount } = require('process');
-const { link } = require('fs');
+const {
+	genres,
+	data,
+	loadData,
+	getObject,
+	toMeta,
+	toMetas,
+	filterByGenre,
+	fetchAndStoreVideos,
+	sleep,
+	youtubeDict
+} = require('./lib/highlights');
 
-const endpoint = 'https://www.scorebat.com/video-api/v1/';
-const genres = [
-	'England',
-	'Spain',
-	'Germany',
-	'Italy',
-	'France',
-	'Netherlands',
-	'USA',
-	'Argentina',
-	'Brazil',
-	'Mexico',
-	'Europa League',
-	'Other'
-];
+loadData();
 
-// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/responses/manifest.md
 const manifest = {
 	id: 'extra.time',
 	version: '0.0.1',
@@ -47,237 +36,17 @@ const manifest = {
 };
 const builder = new addonBuilder(manifest);
 
-let data = [];
-let youtubeDict = {};
-let backgrounds = {};
-
-// Gets the data object from the server
-if (!data.length) {
-	axios
-		.get(endpoint)
-		.then(response => {
-			data = response.data;
-			return response.data;
-		})
-		.catch(error => {
-			console.log(error);
-			return [];
-		});
-}
-
-/**
- * Removes space from one or more strings, usually titles, to create a predictable id
- *
- * @param {Array<string>} strings - An array of predictable strings to be sanitised
- * @return {string} A sanitised id
- */
-const sanitiseId = strings => {
-	return strings.map(string => string.replace(/\s/g, '')).join('|||');
-};
-
-/**
- * Returns the object from the data using id
- *
- * @param {string} id - A unique id that is used by stremio
- * @return {Object} The original object that correlates to the stremio id
- */
-const getObject = id => {
-	const objectArr = data.filter(obj => sanitiseId([obj.title]) === id);
-	return objectArr.length ? objectArr[0] : null;
-};
-
-/**
- * Converts data array to catalog metas
- *
- * @param {Array<Object>} data - An array of original data objects
- * @return {Array<Object>} An array of stremio relevant meta objects
- */
-const toMetas = async data => {
-	const newData = await Promise.all(
-		data.map(async object => {
-			const meta = await toMeta(object);
-			return meta;
-		})
-	);
-	return newData;
-};
-
-/**
- * Converts single object to meta
- *
- * @param {Object} object - An original data object
- * @return {Object} A more in depth stremio meta object
- */
-const toMeta = async (object, blur) => {
-	const id = sanitiseId([object.title]);
-	const league = object.competition
-		? leagues[object.competition.name] || leagues.default
-		: leagues.default;
-
-	const genre =
-		league === league.default
-			? [formatString(object.competition.name), 'Other']
-			: league.genres;
-
-	let background = object.thumbnail;
-
-	// toMeta is used in catalogue as well as for details page - we don't want to bother blurring everything
-	// when it's loaded in catalogue as it would be too slow, therefore only blur if specified
-	if (blur && !backgrounds[id]) {
-		// Blurs the thumbnail to be used as the detail background - would be pixelated otherwise
-		const image = await jimp.read(object.thumbnail);
-		image.blur(5);
-
-		// Get background image as base664 string
-		background = await image.getBase64Async(jimp.MIME_PNG);
-		backgrounds[id] = background;
-	}
-
-	const meta = {
-		id,
-		type: 'sports',
-		name: object.title,
-		poster: object.thumbnail,
-		posterShape: 'landscape',
-		background: background,
-		logo: league.image,
-		genre: genre,
-		description: generateDescription(object),
-		cast: [object.side1.name, object.side2.name],
-		released: object.date,
-		dvdRelease: object.date,
-		country: /.+?(?=:)/.exec(formatString(object.competition.name))[0],
-		website: object.url,
-		isPeered: true,
-		videos: object.videos.map(video => ({
-			id: sanitiseId([object.title, video.title]),
-			title: video.title,
-			publishedAt: new Date(object.date),
-			released: object.date,
-			thumbnail: object.thumbnail,
-			available: true
-		}))
-	};
-
-	// If we're not blurring then resolve the promise immediately as we're not waiting for blur
-	return blur ? meta : Promise.resolve(meta);
-};
-
-/**
- * Lower cases and then capitalises the ffirst letter of each word
- *
- * @param {string} string - The string to be formatted
- * @return {string} The formatted string
- */
-const formatString = string => {
-	const lowerCased = string.toLowerCase();
-	const words = lowerCased.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1));
-	return words.join(' ');
-};
-
-/**
- * Generates a description using the original data object
- *
- * @param {Object} object - An original data object
- * @return {string} The description made up of properties og the object
- */
-const generateDescription = object => {
-	const date = new Date(object.date);
-	const dateString = date.toDateString();
-	const timeString = date.toTimeString();
-	return `Kick off on ${dateString} at ${timeString} between ${object.side1.name} and ${
-		object.side2.name
-	} for ${formatString(object.competition.name)}`;
-};
-
-/**
- * Parses the embed field of the object returning the stream url
- *
- * @param {string} embed - An embeddable string representing HTML
- * @return {string} The src pulled from an iframe in the embed
- */
-const parseEmbed = embed => {
-	const $ = cheerio.load(embed);
-	return $('iframe').attr('src') || $('a').attr('href');
-};
-/** extract link from url */
-const extractLinks = async (url) => {
-	try {
-	  // Fetch the content of the webpage
-	  const response = await axios.get(url);
-	  const data = response.data;
-	  const youtubeIdPattern = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)?([a-zA-Z0-9_-]{11})/;
-        
-	  const match = data.match(youtubeIdPattern)
-	  if (match && match[1]) {
-	  // Return the array of links
-	  return match[1];
-	  } 
-	  return [];
-	} catch (error) {
-	  console.error('Error fetching or parsing the webpage:', error);
-	  return [];
-	}
-  };
-
-/**
- * Fetches the youtube id of the video by scraping it from the source code
- * a couple of iframe url levels deep and stores it in a dictionary against
- * the video id
- *
- * @param {Object} object - An original data object
- */
-const fetchAndStoreVideos = object => {
-	object.videos.forEach(async video => {
-		// Return if youtube Id has already been found
-		const videoId = sanitiseId([object.title, video.title]);
-		if (youtubeDict[videoId]) return;
-
-		// The youtube id is buried within a few urls so let's get the first one and read it's source
-	
-		const url1 = parseEmbed(video.embed);
-		
-		extractLinks(url1).then(youtubeId =>{
-			console.error('Extracted Links', youtubeId);
-			if (youtubeId)  {
-				youtubeDict[videoId] = youtubeId;
-			}
-		});
-		// This one requires javascript to load the data so use puppeteer to allow this to load
-	});
-};
-
-/**
- * Waits a specified amount of time
- *
- * @param {number} ms - The time to wait in milliseconds
- * @return {Promise} The promise returned, resolevd after a certain amount of time
- */
-const sleep = ms => {
-	return new Promise(resolve => {
-		setTimeout(resolve, ms);
-	});
-};
-
-// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineCatalogHandler.md
 builder.defineCatalogHandler(({ extra }) => {
 	const resolve = async () => {
-		let result = await toMetas(data);
-		if (extra.genre === 'Other') {
-			result = result.filter(meta => !meta.genre.some(genre => genres.includes(genre)));
-		} else {
-			result = extra.genre ? result.filter(meta => meta.genre.includes(extra.genre)) : result;
-		}
+		await loadData();
+		const result = filterByGenre(await toMetas(data()), extra.genre);
 		return Promise.resolve({ metas: result });
 	};
 	return resolve();
 });
 
-// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineMetaHandler.md
 builder.defineMetaHandler(({ id }) => {
 	const object = getObject(id);
-
-	// Start fetching the youtube ids
 	fetchAndStoreVideos(object);
 
 	const resolve = async () => {
@@ -287,20 +56,15 @@ builder.defineMetaHandler(({ id }) => {
 	return resolve();
 });
 
-// Docs: https://github.com/Stremio/stremio-addon-sdk/blob/master/docs/api/requests/defineStreamHandler.md
 builder.defineStreamHandler(({ id }) => {
 	const resolveWithYT = async () => {
 		if (youtubeDict[id]) {
-			// Resolve if youtube id has already been fetched
-			console.log(youtubeDict[id]);
-			var ytId = youtubeDict[id];
-			var thumbnailLk = "https://i.ytimg.com/vi/"+ytId+"/hqdefault.jpg" ;
-			return Promise.resolve({ streams: [{ ytId: ytId, thumbnail: thumbnailLk}] });
-		} else {
-			// Wait and retry to see if youtube id has now been fetched
-			await sleep(100);
-			return resolveWithYT();
+			const ytId = youtubeDict[id];
+			const thumbnailLk = 'https://i.ytimg.com/vi/' + ytId + '/hqdefault.jpg';
+			return Promise.resolve({ streams: [{ ytId: ytId, thumbnail: thumbnailLk }] });
 		}
+		await sleep(100);
+		return resolveWithYT();
 	};
 	return resolveWithYT();
 });

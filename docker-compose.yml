@@ -1,0 +1,16 @@
+services:
+  extra-time:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7000:7000"
+    environment:
+      PORT: "7000"
+      HOST: "0.0.0.0"
+      PUBLIC_URL: "https://highlights.tvflix.co.uk"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7000/manifest.json"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

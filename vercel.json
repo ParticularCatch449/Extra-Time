@@ -1,6 +1,5 @@
 {
-    "installCommand": "pnpm install",
-    "builds": [{ "src": "serverless.js", "use": "@now/node" }],
-    "routes": [{ "src": "/.*", "dest": "/serverless.js" }]
-  
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"installCommand": "pnpm install",
+	"rewrites": [{ "source": "/(.*)", "destination": "/api" }]
 }

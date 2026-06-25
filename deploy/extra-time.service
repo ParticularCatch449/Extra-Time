@@ -1,0 +1,17 @@
+[Unit]
+Description=Extra Time Stremio addon
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/extra-time
+Environment=NODE_ENV=production
+Environment=PORT=7000
+Environment=PUBLIC_URL=https://highlights.tvflix.co.uk
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
