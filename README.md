@@ -2,6 +2,8 @@
 
 Watch goals and highlights from the latest football matches from around the world.
 
+Highlights are aggregated from **ScoreBat** (free public feeds) and official league **YouTube** channels (RSS, no API key required). YouTube-sourced videos resolve directly without browser scraping. Optional `YOUTUBE_API_KEY` enables `scripts/youtube-backfill.js` for deeper historical pagination.
+
 Based on [jamesalester/Extra-Time](https://github.com/jamesalester/Extra-Time). This copy is maintained at [ParticularCatch449/Extra-Time](https://github.com/ParticularCatch449/Extra-Time).
 
 ![Extra Time Preview](./preview.png)

@@ -8,8 +8,7 @@ const {
 	toMetas,
 	filterByGenre,
 	fetchAndStoreVideos,
-	sleep,
-	youtubeDict
+	getStream
 } = require('./lib/highlights');
 
 loadData();
@@ -57,16 +56,29 @@ builder.defineMetaHandler(({ id }) => {
 });
 
 builder.defineStreamHandler(({ id }) => {
-	const resolveWithYT = async () => {
-		if (youtubeDict[id]) {
-			const ytId = youtubeDict[id];
-			const thumbnailLk = 'https://i.ytimg.com/vi/' + ytId + '/hqdefault.jpg';
-			return Promise.resolve({ streams: [{ ytId: ytId, thumbnail: thumbnailLk }] });
-		}
-		await sleep(100);
-		return resolveWithYT();
-	};
-	return resolveWithYT();
+	return getStream(id)
+		.then(stream => {
+			if (stream.youtubeId) {
+				return {
+					streams: [
+						{
+							ytId: stream.youtubeId,
+							thumbnail: stream.thumbnail
+						}
+					]
+				};
+			}
+			return {
+				streams: [
+					{
+						externalUrl: stream.embedUrl,
+						title: 'Highlights',
+						behaviorHints: { notWebReady: true }
+					}
+				]
+			};
+		})
+		.catch(() => ({ streams: [] }));
 });
 
 module.exports = builder.getInterface();

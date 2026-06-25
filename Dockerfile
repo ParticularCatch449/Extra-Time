@@ -1,6 +1,13 @@
-FROM node:18-alpine
+FROM node:18-bookworm-slim
+
+RUN apt-get update \
+	&& apt-get install -y --no-install-recommends chromium \
+	&& rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 COPY package.json package-lock.json* pnpm-lock.yaml* ./
 RUN if [ -f pnpm-lock.yaml ]; then \

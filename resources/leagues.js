@@ -113,6 +113,16 @@ const leagues = {
 		genres: ['Australia', 'A-League']
 	},
 
+	'AUSTRALIA: A-League Men': {
+		image: 'https://www.thesportsdb.com/images/media/league/badge/sfhanl1547383730.png',
+		genres: ['Australia', 'A-League']
+	},
+
+	'AUSTRALIA: Isuzu UTE A-League': {
+		image: 'https://www.thesportsdb.com/images/media/league/badge/sfhanl1547383730.png',
+		genres: ['Australia', 'A-League']
+	},
+
 	'AUSTRALIA: Brisbane Premier League': {
 		image: 'https://upload.wikimedia.org/wikipedia/en/a/a2/Brisbane_Premier_League.png',
 		genres: ['Australia', 'Brisbane Premier League']
